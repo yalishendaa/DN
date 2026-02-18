@@ -1,0 +1,41 @@
+# Minimal DN config with safe defaults.
+# Works with dry-run scripts without placing orders.
+
+mode: monitor
+
+entry:
+  instrument: BTC-PERP
+  primary_exchange: extended
+  secondary_exchange: variational
+  direction: long
+  size: 0.001
+  target_size: 0.001
+  post_only: true
+
+instruments:
+  - symbol: BTC-PERP
+    extended_market_name: BTC-USD
+    variational_underlying: BTC
+
+extended:
+  env_file: Extended/.env
+  network: mainnet
+
+# Optional block for Nado integration (non-default / legacy-coupled):
+# nado:
+#   env_file: Nado/.env
+#   network: mainnet
+#   subaccount_name: default
+
+variational:
+  env_file: Variational/.env
+
+risk:
+  max_delta_base: 0.01
+  max_delta_usd: 1000
+  max_order_size_base: 0.05
+  max_position_base: 1.0
+  min_balance_usd: 100
+
+order_post_only: true
+price_offset_pct: 0.01

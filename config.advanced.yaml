@@ -1,0 +1,34 @@
+# Тонкая настройка enter_delta_neutral.
+# Этот файл опциональный: если есть, значения из него подмешиваются как дефолты.
+# Приоритет выше у entry в основном config.yaml.
+
+entry:
+  # Смещения лимитки (доли от ref цены)
+  offset_pct: 0.0005
+  offset_retry_pct: 0.0008
+  close_offset_pct: 0.0003
+  close_offset_retry_pct: 0.0006
+
+  # Исполнение второй ноги (IOC/taker)
+  slippage_pct: 0.05
+  secondary_slippage_pct: 0.05
+  ioc_min_cross_pct: 0.2
+
+  # Тип лимитки
+  post_only: true
+
+  # Тайминги
+  poll_interval: 0.2
+  reprice_interval_sec: 15.0
+
+  # Логи
+  log_mode: compact
+
+  # Защитные параметры
+  hedge_margin_buffer: 0.90
+  close_min_notional: 105
+
+  # Fallback при post-only crossing
+  post_only_fallback_factor: 1.50
+  post_only_fallback_retries: 4
+  post_only_fallback_max_pct: 0.30

@@ -1,0 +1,40 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+Nado/.venv/
+Extended/.venv/
+
+# Local secrets
+.env
+*.env
+!*.env.example
+
+# Runtime artifacts
+logs/
+Nado/logs/
+*.sqlite
+*.sqlite3
+*.db
+
+# Editor/OS
+.idea/
+.vscode/
+.DS_Store
+
+# Nested vendor repositories metadata
+Extended/python_sdk/.git/
+Nado/nado-python-sdk/.git/
+legacy/variational_legacy/.git/
