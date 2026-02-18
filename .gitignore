@@ -25,6 +25,7 @@ Extended/.venv/
 # Runtime artifacts
 logs/
 Nado/logs/
+docs/
 *.sqlite
 *.sqlite3
 *.db
