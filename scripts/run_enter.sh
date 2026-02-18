@@ -13,7 +13,7 @@ Usage: $0 [--safe] [--live] [--config <path>] [config-path]
 
 Options:
   --safe            offline config validation only (no adapters, no network, no orders)
-  --live            allow real run (still requires CONFIRM_LIVE_TRADING=1)
+  --live            allow real run
   --config <path>   explicit config path (alternative to positional arg)
 USAGE
 }
@@ -91,13 +91,7 @@ fi
 
 if [ "${LIVE_MODE}" -ne 1 ]; then
   echo "[run] FAIL: live run is blocked without --live"
-  echo "[run] remediation: CONFIRM_LIVE_TRADING=1 ./scripts/run_enter.sh --live ${CONFIG_PATH}"
-  exit 2
-fi
-
-if [ "${CONFIRM_LIVE_TRADING:-}" != "1" ]; then
-  echo "[run] FAIL: live run is blocked; set CONFIRM_LIVE_TRADING=1"
-  echo "[run] remediation: CONFIRM_LIVE_TRADING=1 ./scripts/run_enter.sh --live ${CONFIG_PATH}"
+  echo "[run] remediation: ./scripts/run_enter.sh --live ${CONFIG_PATH}"
   exit 2
 fi
 

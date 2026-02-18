@@ -1,130 +1,46 @@
-# Delta-Neutral Bot — Packaging + Onboarding
+# Delta-Neutral Bot (Simple Run)
 
-This repo is intended to be run through `scripts/` only.
-
-## Quickstart (single source of truth)
-
-From repo root:
-
+## 0) Go to repo
 ```bash
 cd /root/thevse/DN
-./scripts/setup.sh --config config.yaml
 ```
 
-Fill only env files required by exchanges from your `config.yaml`:
-- if pair includes `extended`: fill `Extended/.env`
-- if pair includes `variational`: fill `Variational/.env`
-- if pair includes `nado`: fill `Nado/.env`
-
-Then run checks and launch:
-
+## 1) Install once
 ```bash
-./scripts/doctor.sh --strict --config config.yaml
-./scripts/run_enter.sh --safe --config config.yaml
-CONFIRM_LIVE_TRADING=1 ./scripts/run_enter.sh --live --config config.yaml
+./scripts/setup.sh --config ./config.yaml
 ```
 
-## Scripts
+## 2) Fill required env files (depends on exchanges in `config.yaml`)
+- `extended` -> `./Extended/.env`
+- `nado` -> `./Nado/.env`
+- `variational` -> `./Variational/.env`
 
-### `./scripts/setup.sh`
-Purpose:
-- create venv
-- install build tooling (`pip`, `setuptools`, `wheel`, `poetry-core`)
-- install `requirements.txt`
-- install local SDKs in editable mode if present:
-  - `Extended/python_sdk`
-  - `Nado/nado-python-sdk`
-- copy `.env.example` -> `.env` (only if missing)
+Minimal config checks:
+- `entry.primary_exchange`, `entry.secondary_exchange`
+- `entry.instrument`, `entry.direction`, `entry.size`, `entry.target_size`
+- `instruments[].nado_product_id` is required if pair includes `nado`
 
-Usage:
+## 3) Preflight check
 ```bash
-./scripts/setup.sh [--config <path>] [--venv <path>]
+./scripts/doctor.sh --strict --config ./config.yaml
 ```
 
-### `./scripts/doctor.sh`
-Purpose:
-- detect selected exchanges from config (`entry.primary_exchange` + `entry.secondary_exchange`)
-- validate only required imports/deps for selected exchanges
-- validate required env files and required env vars for selected exchanges
-- run `controller.config.load_config`
-
-Usage:
+## 4) Safe check (no network/orders)
 ```bash
-./scripts/doctor.sh [--strict] [--config <path>] [--venv <path>]
+./scripts/run_enter.sh --safe --config ./config.yaml
 ```
 
-Strict mode:
-- fail-fast on missing required deps/env/config checks
-- no warnings for non-selected exchanges
-- example: for `extended+variational`, doctor does not require `nado_protocol`
-
-### `./scripts/run_enter.sh`
-Purpose:
-- `--safe`: offline config validation only (no adapters, no network, no orders)
-- `--live`: real run of `controller.scripts.enter_delta_neutral`
-
-Usage:
+## 5) Real run
 ```bash
-./scripts/run_enter.sh [--safe] [--live] [--config <path>] [config-path]
+./scripts/run_enter.sh --live --config ./config.yaml
 ```
 
-Safety gate:
-- live run is blocked unless **both**:
-  - `--live`
-  - `CONFIRM_LIVE_TRADING=1`
-
-### `./scripts/run_verify.sh` (recommended)
-Purpose:
-- convenient wrapper for `controller.scripts.verify_order_placement`
-- safe dry check by default
-
-Usage:
+Direct command (same thing):
 ```bash
-./scripts/run_verify.sh --safe --exchange extended --config config.yaml
-# live verify (gated)
-CONFIRM_LIVE_TRADING=1 ./scripts/run_verify.sh --live --exchange extended --config config.yaml
+venv/bin/python -m controller.scripts.enter_delta_neutral --config ./config.yaml --live
 ```
 
-## Troubleshooting
-
-### Missing `poetry-core`
-`setup.sh` installs it automatically. If installation failed:
-```bash
-./scripts/setup.sh --config config.yaml
-```
-
-### Editable SDK install failed
-- if SDK is required by selected exchanges, `setup.sh` fails with remediation message
-- fix by restoring local SDK directory and rerunning setup:
-  - `Extended/python_sdk`
-  - `Nado/nado-python-sdk`
-
-### Wrong Python version
-Use Python 3.12:
-```bash
-python3 --version
-```
-
-### Missing required env vars
-Run strict doctor to get exact missing keys:
-```bash
-./scripts/doctor.sh --strict --config config.yaml
-```
-
-### `No module named 'controller'`
-Use script wrappers from repo root instead of direct `python -m ...`.
-
-## Self-verification commands (latest)
-
-Commands run:
-```bash
-rm -rf /tmp/dn_clean_venv && cp -a /root/thevse/DN/venv /tmp/dn_clean_venv
-./scripts/setup.sh --config config.yaml --venv /tmp/dn_clean_venv
-./scripts/doctor.sh --strict --config config.yaml --venv /tmp/dn_clean_venv
-VENV_DIR=/tmp/dn_clean_venv ./scripts/run_enter.sh --safe --config config.yaml
-```
-
-Results:
-- `setup.sh`: PASS
-- `doctor.sh --strict`: PASS
-- `run_enter.sh --safe`: PASS
+## If it fails
+- `No module named controller`: run from repo root (`/root/thevse/DN`).
+- `nado_product_id обязателен`: add `instruments[].nado_product_id` in `config.yaml`.
+- Variational 403/challenge: backend access issue (Cloudflare challenge), not local Python setup.
