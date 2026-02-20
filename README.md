@@ -2,7 +2,7 @@
 
 ## 0) Go to repo
 ```bash
-cd /root/thevse/DN
+cd DN
 ```
 
 ## 1) Install once

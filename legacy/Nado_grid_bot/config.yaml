@@ -1,0 +1,38 @@
+network: mainnet
+
+product:
+  symbol: "BTC-PERP"
+  product_id: 2
+
+grid:
+  price_reference: "mark_price"
+  grid_step_pct: 0.10
+  lower_bound_pct: 5.0
+  upper_bound_pct: 5.0
+  levels_down: 20
+  levels_up: 20
+  order_size_x18: 10000000000000000  # 0.01 BTC in x18
+  no_action_outside_range: true
+
+orders:
+  order_type: "POST_ONLY"
+  reduce_only_on_sells: true
+  spot_leverage: false
+  order_ttl_sec: 86400
+
+fills:
+  ws_enabled: true
+  stream_type: "fill"
+  pause_on_is_taker: true
+
+polling_fallback:
+  enabled: true
+  poll_interval_sec: 5
+
+retries:
+  max_retries: 5
+  backoff_base_sec: 1
+
+paths:
+  log_path: "logs/bot.log"
+  state_path: "data/state.sqlite"

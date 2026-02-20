@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import inspect
+import re
 from pathlib import Path
 from typing import Any
 
@@ -72,6 +73,59 @@ def _prefix_var(order_id: str) -> str:
 
 def _strip_var(order_id: str) -> str:
     return order_id[4:] if order_id.startswith("var:") else order_id
+
+
+_SENSITIVE_FIELDS = {
+    "authorization",
+    "cookie",
+    "set-cookie",
+    "token",
+    "access_token",
+    "refresh_token",
+    "signed_message",
+    "signature",
+    "private_key",
+}
+_SENSITIVE_JSON_RE = re.compile(
+    r'("(?:authorization|cookie|set-cookie|token|access_token|refresh_token|signed_message|signature|private_key)"\s*:\s*")[^"]*(")',
+    flags=re.IGNORECASE,
+)
+_SENSITIVE_QUERY_RE = re.compile(
+    r"((?:authorization|cookie|set-cookie|token|access_token|refresh_token|signed_message|signature|private_key)\s*=\s*)[^&\s]+",
+    flags=re.IGNORECASE,
+)
+_BEARER_RE = re.compile(r"(Bearer\s+)[A-Za-z0-9._\-+/=]+", flags=re.IGNORECASE)
+
+
+def _sanitize_text(value: str) -> str:
+    text = _BEARER_RE.sub(r"\1<redacted>", value)
+    text = _SENSITIVE_JSON_RE.sub(r"\1<redacted>\2", text)
+    text = _SENSITIVE_QUERY_RE.sub(r"\1<redacted>", text)
+    return text
+
+
+def _sanitize_for_log(value: Any) -> Any:
+    if isinstance(value, dict):
+        redacted: dict[Any, Any] = {}
+        for key, item in value.items():
+            if str(key).lower() in _SENSITIVE_FIELDS:
+                redacted[key] = "<redacted>"
+            else:
+                redacted[key] = _sanitize_for_log(item)
+        return redacted
+    if isinstance(value, list):
+        return [_sanitize_for_log(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_sanitize_for_log(item) for item in value)
+    if isinstance(value, str):
+        return _sanitize_text(value)
+    return value
+
+
+def _safe_str(value: Any) -> str:
+    if isinstance(value, BaseException):
+        return _sanitize_text(str(value))
+    return str(_sanitize_for_log(value))
 
 
 class VariationalClient:
@@ -174,11 +228,13 @@ class VariationalClient:
         )
         status = await self._response_status(resp)
         if status >= 400:
-            raise RuntimeError(f"{path}: HTTP {status} {await self._response_text(resp)}")
+            response_text = _sanitize_text(await self._response_text(resp))
+            raise RuntimeError(f"{path}: HTTP {status} {response_text}")
         try:
             return await self._response_json(resp)
         except Exception as exc:
-            raise RuntimeError(f"{path}: invalid JSON response {await self._response_text(resp)}") from exc
+            response_text = _sanitize_text(await self._response_text(resp))
+            raise RuntimeError(f"{path}: invalid JSON response {response_text}") from exc
 
     async def get_sign_data(self) -> str:
         resp = await self.session.post(
@@ -187,7 +243,7 @@ class VariationalClient:
         )
         sign_data = await self._response_text(resp)
         if not isinstance(sign_data, str) or not sign_data.startswith("omni.variational.io wants you to"):
-            raise RuntimeError(f"Failed to get sign data: {sign_data}")
+            raise RuntimeError(f"Failed to get sign data: {_sanitize_text(sign_data)}")
         return sign_data
 
     async def auth_login(self, signature: str) -> dict[str, Any]:
@@ -197,7 +253,7 @@ class VariationalClient:
             payload={"address": self.address, "signed_message": signature},
         )
         if not isinstance(data, dict) or data.get("token") is None:
-            raise RuntimeError(f"Failed to auth login: {data}")
+            raise RuntimeError(f"Failed to auth login: {_safe_str(data)}")
         return data
 
     async def get_portfolio(self) -> dict[str, Any]:
@@ -207,19 +263,19 @@ class VariationalClient:
             params={"compute_margin": "true"},
         )
         if not isinstance(data, dict):
-            raise RuntimeError(f"Unexpected portfolio payload: {data}")
+            raise RuntimeError(f"Unexpected portfolio payload: {_safe_str(data)}")
         return data
 
     async def get_balance_details(self) -> dict[str, Any]:
         data = await self._request_json("GET", "/settlement_pools/details")
         if not isinstance(data, dict):
-            raise RuntimeError(f"Unexpected settlement details payload: {data}")
+            raise RuntimeError(f"Unexpected settlement details payload: {_safe_str(data)}")
         return data
 
     async def get_positions(self) -> list[dict[str, Any]]:
         data = await self._request_json("GET", "/positions")
         if not isinstance(data, list):
-            raise RuntimeError(f"Unexpected positions payload: {data}")
+            raise RuntimeError(f"Unexpected positions payload: {_safe_str(data)}")
         return [item for item in data if isinstance(item, dict)]
 
     async def get_orders(self) -> list[dict[str, Any]]:
@@ -233,13 +289,13 @@ class VariationalClient:
         }
         data = await self._request_json("GET", "/orders/v2", params=params)
         if not isinstance(data, dict) or not isinstance(data.get("result"), list):
-            raise RuntimeError(f"Unexpected orders payload: {data}")
+            raise RuntimeError(f"Unexpected orders payload: {_safe_str(data)}")
         return [item for item in data["result"] if isinstance(item, dict)]
 
     async def get_supported_assets(self) -> dict[str, Any]:
         data = await self._request_json("GET", "/metadata/supported_assets")
         if not isinstance(data, dict):
-            raise RuntimeError(f"Unexpected supported_assets payload: {data}")
+            raise RuntimeError(f"Unexpected supported_assets payload: {_safe_str(data)}")
         return data
 
     async def get_indicative(self, underlying: str, amount: float) -> dict[str, Any]:
@@ -257,13 +313,13 @@ class VariationalClient:
             },
         )
         if not isinstance(data, dict):
-            raise RuntimeError(f"Unexpected indicative payload: {data}")
+            raise RuntimeError(f"Unexpected indicative payload: {_safe_str(data)}")
         return data
 
     async def create_limit_order(self, payload: dict[str, Any]) -> dict[str, Any]:
         data = await self._request_json("POST", "/orders/new/limit", payload=payload)
         if not isinstance(data, dict):
-            raise RuntimeError(f"Unexpected create_order payload: {data}")
+            raise RuntimeError(f"Unexpected create_order payload: {_safe_str(data)}")
         return data
 
     async def cancel_order(self, rfq_id: str) -> dict[str, Any]:
@@ -276,7 +332,7 @@ class VariationalClient:
         if data is None:
             return {}
         if not isinstance(data, dict):
-            raise RuntimeError(f"Unexpected cancel_order payload: {data}")
+            raise RuntimeError(f"Unexpected cancel_order payload: {_safe_str(data)}")
         return data
 
 
@@ -340,7 +396,7 @@ class VariationalAdapter(ExchangeAdapter):
                 if isinstance(ask, dict):
                     min_qty = max(min_qty, _to_float(ask.get("min_qty"), 0.0))
         except Exception as exc:
-            logger.warning("Failed to get min_qty for %s: %s", underlying, exc)
+            logger.warning("Failed to get min_qty for %s: %s", underlying, _safe_str(exc))
         self._min_qty_cache[underlying] = max(min_qty, 0.0)
         return self._min_qty_cache[underlying]
 
@@ -555,7 +611,7 @@ class VariationalAdapter(ExchangeAdapter):
                 return PlacedOrderResult(
                     id="",
                     success=False,
-                    error=f"unexpected order response: {response}",
+                    error=f"unexpected order response: {_safe_str(response)}",
                 )
             logger.info(
                 "Order placed on Variational: %s %s %s @ %s, id=%s",
@@ -567,8 +623,8 @@ class VariationalAdapter(ExchangeAdapter):
             )
             return PlacedOrderResult(id=_prefix_var(order_id), success=True)
         except Exception as exc:
-            logger.error("Failed to place order on Variational: %s", exc)
-            return PlacedOrderResult(id="", success=False, error=str(exc))
+            logger.error("Failed to place order on Variational: %s", _safe_str(exc))
+            return PlacedOrderResult(id="", success=False, error=_safe_str(exc))
 
     async def cancel_order(self, instrument: str, order_id: str) -> bool:
         try:
@@ -582,10 +638,14 @@ class VariationalAdapter(ExchangeAdapter):
             if response == {}:
                 logger.info("Order cancelled on Variational: %s", order_id)
                 return True
-            logger.warning("Unexpected cancel response on Variational for %s: %s", order_id, response)
+            logger.warning(
+                "Unexpected cancel response on Variational for %s: %s",
+                order_id,
+                _safe_str(response),
+            )
             return True
         except Exception as exc:
-            logger.error("Failed to cancel order %s on Variational: %s", order_id, exc)
+            logger.error("Failed to cancel order %s on Variational: %s", order_id, _safe_str(exc))
             return False
 
     async def cancel_all_orders(self, instrument: str) -> int:
@@ -598,5 +658,5 @@ class VariationalAdapter(ExchangeAdapter):
             logger.info("Cancelled %d orders on Variational for %s", cancelled, instrument)
             return cancelled
         except Exception as exc:
-            logger.error("Failed to cancel all orders on Variational: %s", exc)
+            logger.error("Failed to cancel all orders on Variational: %s", _safe_str(exc))
             return 0

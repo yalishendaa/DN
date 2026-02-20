@@ -1,18 +1,18 @@
 mode: monitor
 
 entry:
-  instrument: BTC-PERP
+  instrument: BNB-PERP
   primary_exchange: extended
   secondary_exchange: variational
   direction: long
-  size: 0.002
-  target_size: 0.002
+  size: 0.25
+  target_size: 0.25
 
 instruments:
-  - symbol: BTC-PERP
-    extended_market_name: BTC-USD
-    nado_product_id: 2        # check markets.json for the correct product_id
-    variational_underlying: BTC
+  - symbol: BNB-PERP
+    extended_market_name: BNB-USD
+    nado_product_id: 14        # check markets.json for the correct product_id
+    variational_underlying: BNB
 
 extended:
   env_file: Extended/.env
