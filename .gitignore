@@ -44,6 +44,7 @@ legacy/variational_legacy/.git/
 Extended/python_sdk/
 Nado/nado-python-sdk/
 legacy/variational_legacy/
+pyproject.toml
 
 legacy/Nado_grid_bot/
 Nado/.cursor/

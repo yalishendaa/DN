@@ -42,5 +42,5 @@ venv/bin/python -m controller.scripts.enter_delta_neutral --config ./config.yaml
 
 ## If it fails
 - `No module named controller`: run from repo root (`/root/thevse/DN`).
-- `nado_product_id обязателен`: add `instruments[].nado_product_id` in `config.yaml`.
+- `nado_product_id mandatory`: add `instruments[].nado_product_id` in `config.yaml`.
 - Variational 403/challenge: backend access issue (Cloudflare challenge), not local Python setup.
