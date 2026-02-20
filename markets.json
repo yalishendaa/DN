@@ -1,0 +1,122 @@
+[
+  {
+    "product_id": 0,
+    "symbol": "USDT0"
+  },
+  {
+    "product_id": 1,
+    "symbol": "KBTC"
+  },
+  {
+    "product_id": 2,
+    "symbol": "BTC-PERP"
+  },
+  {
+    "product_id": 3,
+    "symbol": "WETH"
+  },
+  {
+    "product_id": 4,
+    "symbol": "ETH-PERP"
+  },
+  {
+    "product_id": 5,
+    "symbol": "USDC"
+  },
+  {
+    "product_id": 8,
+    "symbol": "SOL-PERP"
+  },
+  {
+    "product_id": 10,
+    "symbol": "XRP-PERP"
+  },
+  {
+    "product_id": 14,
+    "symbol": "BNB-PERP"
+  },
+  {
+    "product_id": 16,
+    "symbol": "HYPE-PERP"
+  },
+  {
+    "product_id": 18,
+    "symbol": "ZEC-PERP"
+  },
+  {
+    "product_id": 20,
+    "symbol": "MON-PERP"
+  },
+  {
+    "product_id": 22,
+    "symbol": "FARTCOIN-PERP"
+  },
+  {
+    "product_id": 24,
+    "symbol": "SUI-PERP"
+  },
+  {
+    "product_id": 26,
+    "symbol": "AAVE-PERP"
+  },
+  {
+    "product_id": 28,
+    "symbol": "XAUT-PERP"
+  },
+  {
+    "product_id": 30,
+    "symbol": "PUMP-PERP"
+  },
+  {
+    "product_id": 32,
+    "symbol": "TAO-PERP"
+  },
+  {
+    "product_id": 34,
+    "symbol": "XMR-PERP"
+  },
+  {
+    "product_id": 36,
+    "symbol": "LIT-PERP"
+  },
+  {
+    "product_id": 38,
+    "symbol": "kPEPE-PERP"
+  },
+  {
+    "product_id": 40,
+    "symbol": "PENGU-PERP"
+  },
+  {
+    "product_id": 42,
+    "symbol": "USELESS-PERP"
+  },
+  {
+    "product_id": 44,
+    "symbol": "SKR-PERP"
+  },
+  {
+    "product_id": 46,
+    "symbol": "UNI-PERP"
+  },
+  {
+    "product_id": 48,
+    "symbol": "ASTER-PERP"
+  },
+  {
+    "product_id": 50,
+    "symbol": "XPL-PERP"
+  },
+  {
+    "product_id": 52,
+    "symbol": "DOGE-PERP"
+  },
+  {
+    "product_id": 54,
+    "symbol": "WLFI-PERP"
+  },
+  {
+    "product_id": 56,
+    "symbol": "kBONK-PERP"
+  }
+]
