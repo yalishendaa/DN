@@ -39,3 +39,8 @@ docs/
 Extended/python_sdk/.git/
 Nado/nado-python-sdk/.git/
 legacy/variational_legacy/.git/
+
+# Keep nested SDK/legacy repos local-only (don't track as gitlinks)
+Extended/python_sdk/
+Nado/nado-python-sdk/
+legacy/variational_legacy/
