@@ -1042,10 +1042,16 @@ async def main() -> None:
             if ref_second <= 0:
                 raise SystemExit("Не удалось получить ref_price вторичной биржи")
 
+            # При close reduce-only ордер на secondary не может превышать фактическую позицию (Extended 1136).
+            max_secondary_close = abs(secondary_pos_before) if action == "close" else None
+            ioc_amount = (
+                min(filled, max_secondary_close) if max_secondary_close is not None else filled
+            )
+
             # Fast hedge: сначала моментально отправляем вторую ногу, потом уже делаем доп. валидации/ретраи.
             slip_base = secondary_slippage_pct if secondary.name == "extended" else slippage_pct
             slip_try = max(slip_base, ioc_min_cross_pct)
-            ioc_res = await _place_ioc(ref_second, slip_try, filled)
+            ioc_res = await _place_ioc(ref_second, slip_try, ioc_amount)
 
             # Если не пересекает книгу (2056), пробуем ещё раз с удвоенным сдвигом
             if (
@@ -1054,7 +1060,25 @@ async def main() -> None:
                 and "does not cross the book" in ioc_res.error.lower()
             ):
                 slip_try *= 2
-                ioc_res = await _place_ioc(ref_second, slip_try, filled)
+                ioc_res = await _place_ioc(ref_second, slip_try, ioc_amount)
+
+            # При close и 1136 (reduce-only exceeds position) — ретрай с объёмом по фактической позиции
+            if (
+                not ioc_res.success
+                and action == "close"
+                and ioc_res.error
+                and "1136" in ioc_res.error
+                and "exceeds position" in (ioc_res.error or "").lower()
+            ):
+                pos_now = (await secondary.get_position(symbol)).size
+                retry_1136_amount = min(filled, abs(pos_now))
+                if retry_1136_amount > 1e-9:
+                    logger.warning(
+                        "Extended 1136: повтор с объёмом по позиции secondary: %.6f -> %.6f",
+                        ioc_amount,
+                        retry_1136_amount,
+                    )
+                    ioc_res = await _place_ioc(ref_second, slip_try, retry_1136_amount)
 
             # Для secondary=Extended в open-режиме при 1140 пробуем уменьшить размер и повторить.
             if not ioc_res.success and action == "open" and isinstance(secondary, ExtendedAdapter):
@@ -1117,7 +1141,12 @@ async def main() -> None:
                     hedge_retry_count,
                     slip_try,
                 )
-                retry_res = await _place_ioc(ref_second_retry, slip_try, residual_unhedged)
+                retry_amount = (
+                    min(residual_unhedged, max_secondary_close)
+                    if max_secondary_close is not None
+                    else residual_unhedged
+                )
+                retry_res = await _place_ioc(ref_second_retry, slip_try, retry_amount)
                 if not retry_res.success:
                     ioc_res = retry_res
                     break
