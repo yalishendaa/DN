@@ -17,10 +17,12 @@ ENV/
 Nado/.venv/
 Extended/.venv/
 
-# Local secrets
+# Local secrets and local overrides
 .env
 *.env
 !*.env.example
+*.env.sample
+config.advanced.yaml
 
 # Runtime artifacts
 logs/
@@ -34,16 +36,19 @@ docs/
 .idea/
 .vscode/
 .DS_Store
+.cursor/
 
 # Nested vendor repositories metadata
 Extended/python_sdk/.git/
 Nado/nado-python-sdk/.git/
 legacy/variational_legacy/.git/
+Hibachi/hibachi-sdk/.git/
 
 # Keep nested SDK/legacy repos local-only (don't track as gitlinks)
 Extended/python_sdk/
 Nado/nado-python-sdk/
 legacy/variational_legacy/
+Hibachi/hibachi-sdk/
 pyproject.toml
 
 legacy/Nado_grid_bot/
